@@ -6,6 +6,9 @@ load_dotenv()
 
 from google.adk.agents import LlmAgent, SequentialAgent
 
+# Hardcode the key temporarily to completely bypass any hidden .env loading bugs
+os.environ["GEMINI_API_KEY"] = "Your API KEY HERE"  # <-- REPLACE WITH YOUR ACTUAL API KEY
+
 # 1. The Scriptwriter Agent
 scriptwriter_agent = LlmAgent(
     name="scriptwriter_agent",
@@ -37,5 +40,20 @@ youtube_shorts_agent = SequentialAgent(
     sub_agents=[scriptwriter_agent, visualizer_agent, formatter_agent]
 )
 
+def read_my_files() -> str:
+    """Reads all text data saved inside the local data folder."""
+    try:
+        return "\n".join(open(f"./data/{f}", encoding="utf-8").read() for f in os.listdir("./data") if f.endswith((".txt", ".md")))
+    except:
+        return "No text documents found in the data directory."
+
+rag_agent = LlmAgent(
+    name="rag_research_agent",
+    model="gemini-2.5-flash",
+    instruction="You are a research assistant. Look at the text provided by your read_my_files tool to answer user queries accurately.",  # <-- FIXED HERE (no "s")
+    tools=[read_my_files]
+)
+
 # Tell the ADK which agent to run when the server starts
-root_agent = youtube_shorts_agent
+#root_agent = youtube_shorts_agent
+root_agent = rag_agent  
